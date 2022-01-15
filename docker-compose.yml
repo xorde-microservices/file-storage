@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  file-storage:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - files_data:${FILES_UPLOAD_DIR}
+    environment:
+      - APP_NAME=${APP_NAME}
+      - APP_CODE=${APP_CODE}
+      - APP_PORT=${APP_PORT}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME
+      - DB_USERNAME
+      - DB_PASSWORD
+      - DB_MODE
+      - DB_MIGRATIONS
+      - KAFKA_TOPICS
+      - KAFKA_SSL
+      - KAFKA_CLIENT_ID
+      - KAFKA_GROUP_ID
+      - KAFKA_USERNAME
+      - KAFKA_PASSWORD
+      - KAFKA_BROKERS
+      - FILES_UPLOAD_DIR
+      - APP_JWT_SECRET
+    depends_on:
+      - postgres
+    links:
+      - postgres:postgres
+
+  postgres:
+    image: postgres
+    hostname: postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:5432/tcp
+
+volumes:
+  files_data:
+    driver: local
+  postgres_data:
+    driver: local

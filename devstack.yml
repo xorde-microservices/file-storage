@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres
+    hostname: postgres
+    restart: always
+    volumes:
+      - /var/lib/postgresql/apiKey
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:5432/tcp
+
+  pgweb:
+    restart: always
+    image: sosedoff/pgweb
+    ports:
+      - ${DB_ADMIN_PORT}:8081
+    links:
+      - postgres:postgres
+    environment:
+      - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable
+    depends_on:
+      - postgres

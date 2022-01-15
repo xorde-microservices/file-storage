@@ -1,0 +1,10 @@
+# Ignore everything
+**
+
+# Allow files and directories
+!/*.json
+!/src/**
+!/database/**
+!/COPYRIGHT.txt
+!/README.md
+

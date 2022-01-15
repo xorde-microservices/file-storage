@@ -26,6 +26,8 @@ services:
       - KAFKA_BROKERS
       - FILES_UPLOAD_DIR
       - APP_JWT_SECRET
+    ports:
+      - ${APP_PORT}:${APP_PORT}/tcp
     depends_on:
       - postgres
     links:

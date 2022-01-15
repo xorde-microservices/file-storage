@@ -2,13 +2,18 @@ import { Module } from "@nestjs/common";
 import { FilesService } from "./files.service";
 import { FilesController } from "./files.controller";
 import { MulterModule } from "@nestjs/platform-express";
-import { filesConfig } from "./files.config";
+import { filesConfig, filesEnvSchema } from "./files.config";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
 	imports: [
-		// TODO: move directory to settings
 		MulterModule.registerAsync({
 			useFactory: () => ({ dest: filesConfig().files.uploadDir }),
+		}),
+		ConfigModule.forRoot({
+			validationSchema: filesEnvSchema,
+			isGlobal: true,
+			load: [filesConfig],
 		}),
 	],
 	controllers: [FilesController],

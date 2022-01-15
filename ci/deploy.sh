@@ -7,6 +7,9 @@ if [ ! -f "docker-compose.yml" ]; then
   exit
 fi
 
+### pull latest lts-alpine image
+docker pull node:lts-alpine
+
 ### turn down the deployment stack if script has "down" argument
 if [ "${1}" = "down" ]; then
   echo "Getting stack down:"

@@ -18,7 +18,7 @@ import { filesConfig } from "../modules/files/files.config";
 		ConfigModule.forRoot({
 			validationSchema: envSchema,
 			isGlobal: true,
-			load: [appConfig, kafkaConfig, dbConfig, swaggerConfig, filesConfig],
+			load: [appConfig, kafkaConfig, dbConfig, swaggerConfig],
 		}),
 		FilesModule,
 		// KafkaModule,

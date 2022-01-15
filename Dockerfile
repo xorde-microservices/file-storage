@@ -1,24 +1,33 @@
-# to build docker image please run:
-# docker build -t xorde/kafka-huobi .
-FROM node:lts-alpine AS development
+FROM node:lts-alpine as builder
 
-WORKDIR /tmp/build
-COPY package*.json ./
-RUN npm install
+WORKDIR /opt/app
+
 COPY . .
-RUN npm run build
+
+### show npm & node versions and disable npm update notifications
+RUN echo "NPM version: $(npm -version)" && \
+    echo "NODE version: $(node --version)" && \
+    npm config set update-notifier false
+
+### required to build such modules as bcrypt on exotic platforms such as arm64
+RUN apk add python3-dev make gcc g++
+
+RUN npm install && npm run build
 
 FROM node:lts-alpine
 
+### turn production mode on
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /opt/app
-COPY package*.json ./
-RUN npm install --only=production
-COPY --from=development /tmp/build/dist/ ./dist
-EXPOSE 3000
-CMD [ "node", "dist/main" ]
 
-# to enter into shell of this container please run:
-# docker run --rm -it --entrypoint /bin/sh xorde/kafka-huobi
+### copy app files
+COPY --from=builder /opt/app/dist ./dist
+COPY --from=builder /opt/app/node_modules ./node_modules
+
+COPY package.json .
+COPY ci/docker/entrypoint.sh .
+
+### provide entrypoint script
+ENTRYPOINT "./entrypoint.sh"

@@ -34,5 +34,5 @@ export const envSchema = Joi.object({
 	SWAGGER_PATH: Joi.string().allow("").default(defaults.SWAGGER_PATH),
 
 	/* files */
-	...filesSchema,
+	// ...filesSchema,
 });

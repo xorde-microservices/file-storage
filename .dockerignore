@@ -7,4 +7,5 @@
 !/database/**
 !/COPYRIGHT.txt
 !/README.md
+!/ci/docker/*
 

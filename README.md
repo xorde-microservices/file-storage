@@ -6,6 +6,10 @@ A high-performance file storage micro-service with simple API.
 
 ### Environment variables
 
+#### APP_PORT <span style="color:red">*</span>
+
+A port number which will be used to publish the service.
+
 #### APP_JWT_SECRET <span style="color:red">*</span>
 
 A JWT secret shared with your API server. Please note that this microservice does not authenticate your users, but rather validates JWT tokens users supply.

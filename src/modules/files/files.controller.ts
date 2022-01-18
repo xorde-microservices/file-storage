@@ -30,8 +30,6 @@ import { validate } from "class-validator";
 
 @Controller("files")
 @ApiTags("files")
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 export class FilesController {
 	constructor(private readonly service: FilesService) {}
 
@@ -64,6 +62,8 @@ export class FilesController {
 		return new StreamableFile(file);
 	}
 
+	@ApiBearerAuth()
+	@UseGuards(JwtAuthGuard)
 	@UseInterceptors(FileInterceptor("file"))
 	@ApiConsumes("multipart/form-data")
 	@ApiOkResponse({ type: FileUploadResponseDto })

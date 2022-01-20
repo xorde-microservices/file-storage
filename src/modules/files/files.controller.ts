@@ -1,7 +1,7 @@
 import {
 	BadRequestException,
 	Controller,
-	Get,
+	Get, InternalServerErrorException,
 	Param,
 	Post,
 	Query,
@@ -68,8 +68,12 @@ export class FilesController {
 			"Content-Disposition": `attachment; filename="${metadata.filename}"`,
 		});
 
-		const file = createReadStream(metadata.filepath);
-		return new StreamableFile(file);
+		try {
+			const file = createReadStream(metadata.filepath);
+			return new StreamableFile(file);
+		} catch (e) {
+			throw new InternalServerErrorException(`Failed to read filestream`)
+		}
 	}
 
 	@ApiOperation({

@@ -1,6 +1,6 @@
 import {
 	BadRequestException,
-	Injectable,
+	Injectable, InternalServerErrorException,
 	NotFoundException,
 } from "@nestjs/common";
 import { BaseService } from "../../common/base.service";
@@ -69,9 +69,6 @@ export class FilesService extends BaseService {
 
 	/* quick and dirty implementation of generating thumbnails */
 	async getThumb(filename: string, size: number) {
-		const image = await Jimp.read(filename);
-		const thumbName = `${filename}_${size}.thumb`;
-
 		if (size < MIN_THUMB_SIZE || size > MAX_THUMB_SIZE) {
 			this.logger.error(`Thumb size ${size} is out of bounds (${filename})`);
 			throw new BadRequestException(
@@ -79,17 +76,22 @@ export class FilesService extends BaseService {
 			);
 		}
 
-		if (fs.existsSync(thumbName)) {
-			this.logger.debug(`Found existing thumb ${thumbName}`);
-			return thumbName;
-		} else {
-			this.logger.debug(`Generating new thumb ${thumbName}`);
-			try {
-				await image.contain(size, size).writeAsync(thumbName);
-			} catch (e) {
-				fs.rmSync(thumbName);
+		try {
+			const image = await Jimp.read(filename);
+
+			const thumbName = `${filename}_${size}.thumb`;
+			if (fs.existsSync(thumbName)) {
+				this.logger.debug(`Found existing thumb ${thumbName}`);
+				return thumbName;
+			} else {
+				this.logger.debug(`Generating new thumb ${thumbName}`);
+				const thumb = await image.contain(size, size)
+				thumb.writeAsync(thumbName);
+				return thumbName;
 			}
-			return thumbName;
+		} catch (e) {
+			this.logger.error(`Image read failed ${e}`);
+			throw new InternalServerErrorException(`Image read failed ${e}`);
 		}
 	}
 }

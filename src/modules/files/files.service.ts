@@ -51,7 +51,7 @@ export class FilesService extends BaseService {
 
 		if (thumbSize > 0) {
 			this.logger.debug("Getting thumb for a file " + filename);
-			if (!["image/png", "image/jpeg", "image/gif"].includes(contentType)) {
+			if (!["image/png", "image/jpeg"].includes(contentType)) {
 				this.logger.error(
 					`Thumb requested for ${filepath} (${filename}) which is not an image (${contentType})`,
 				);
@@ -85,8 +85,8 @@ export class FilesService extends BaseService {
 				return thumbName;
 			} else {
 				this.logger.debug(`Generating new thumb ${thumbName}`);
-				const thumb = await image.contain(size, size)
-				thumb.writeAsync(thumbName);
+				const thumb = image.contain(size, size)
+				await thumb.writeAsync(thumbName);
 				return thumbName;
 			}
 		} catch (e) {

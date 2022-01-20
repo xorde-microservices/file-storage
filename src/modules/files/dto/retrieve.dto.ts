@@ -1,4 +1,4 @@
-import { IsHexadecimal, IsNotEmpty } from "class-validator";
+import { IsHexadecimal, IsNotEmpty, IsNumberString, IsOptional } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class FileRetrieveParams {
@@ -13,6 +13,8 @@ export class FileRetrieveParams {
 }
 
 export class FileRetrieveArgs {
-	@ApiProperty({ required: false, default: false, description: "Retrieve thumb (boundary 100x100) for image" })
-	thumb: string | boolean;
+	@ApiProperty({ required: false, description: "Retrive thumb of " })
+	@IsOptional()
+	@IsNumberString()
+	thumb: number;
 }

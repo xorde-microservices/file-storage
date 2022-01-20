@@ -54,7 +54,7 @@ export class FilesController {
 			throw new BadRequestException(validationErrors, "Bad parameters");
 		}
 
-		const metadata = await this.service.retrieveFile(params.id, Boolean(args.thumb == "true"));
+		const metadata = await this.service.retrieveFile(params.id, Number(args.thumb || 0));
 
 		res.set({
 			"Content-Type": metadata.contentType,

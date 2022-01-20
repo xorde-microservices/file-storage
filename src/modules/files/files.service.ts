@@ -22,7 +22,7 @@ export class FilesService extends BaseService {
 		return new FileUploadResponseDto(file.filename, file.size);
 	}
 
-	async retrieveFile(fileId: string, isThumb: boolean): Promise<IFileRetrieval> {
+	async retrieveFile(fileId: string, thumbSize: number): Promise<IFileRetrieval> {
 		let filepath = filesConfig().files.uploadDir + "/" + fileId;
 		const jsonFilename = filepath + ".json";
 
@@ -31,7 +31,7 @@ export class FilesService extends BaseService {
 			throw new NotFoundException("")
 		}
 
-		this.logger.log("Retrieve " + v({ fileId, isThumb }));
+		this.logger.log("Retrieve " + v({ fileId, thumbSize }));
 
 		const jsonMetadata = JSON.parse(
 			(await fs.promises.readFile(jsonFilename)).toString(),
@@ -39,13 +39,13 @@ export class FilesService extends BaseService {
 		const contentType = jsonMetadata["mimetype"];
 		let filename = jsonMetadata["originalname"];
 
-		if (isThumb) {
+		if (thumbSize > 0) {
 			this.logger.debug("Getting thumb for a file " + filename);
 			if (contentType != 'image/png') {
 				throw new BadRequestException("Can not generate thumb because file is not an image");
 			}
-			filepath = await this.getThumb(filepath);
-			filename = "thumb_" + filename;
+			filepath = await this.getThumb(filepath, thumbSize);
+			filename = `thumb_${thumbSize}_${filename}`;
 		}
 
 		const size = jsonMetadata["size"];
@@ -53,15 +53,17 @@ export class FilesService extends BaseService {
 	}
 
 	/* quick and dirty implementation of generating thumbnails */
-	async getThumb(filename: string) {
+	async getThumb(filename: string, size: number) {
 		const image = await Jimp.read(filename);
-		const thumbName = filename + ".thumb";
+		const thumbName = `${filename}_${size}.thumb`;
 
 		if (fs.existsSync(thumbName)) {
+			this.logger.debug(`Found existing thumb ${thumbName}`);
+			return thumbName;
+		} else {
+			this.logger.debug(`Generating new thumb ${thumbName}`);
+			await image.contain(size, size).writeAsync(thumbName);
 			return thumbName;
 		}
-
-		await image.contain(100, 100).writeAsync(thumbName);
-		return thumbName;
 	}
 }

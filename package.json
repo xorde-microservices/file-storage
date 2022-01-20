@@ -38,6 +38,7 @@
     "binance": "^2.0.23",
     "class-validator": "^0.13.2",
     "dotenv": "^10.0.0",
+    "jimp": "^0.16.1",
     "joi": "^17.5.0",
     "kafkajs": "^1.15.0",
     "passport-jwt": "^4.0.0",

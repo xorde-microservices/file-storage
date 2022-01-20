@@ -3,7 +3,7 @@ import {
 	Controller,
 	Get,
 	Param,
-	Post,
+	Post, Query,
 	Request,
 	Res,
 	StreamableFile,
@@ -24,12 +24,14 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { FileUploadDto, FileUploadResponseDto } from "./dto/upload.dto";
 import { FilesService } from "./files.service";
-import { FileRetriveParams } from "./dto/retrieve.dto";
+import { FileRetrieveArgs, FileRetrieveParams } from "./dto/retrieve.dto";
 import { createReadStream } from "fs";
 import { validate } from "class-validator";
 
 @Controller("files")
 @ApiTags("files")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 export class FilesController {
 	constructor(private readonly service: FilesService) {}
 
@@ -43,15 +45,16 @@ export class FilesController {
 	@Get(":id")
 	async getFile(
 		@Res({ passthrough: true }) res,
-		@Param() params: FileRetriveParams,
+		@Param() params: FileRetrieveParams,
+		@Query() args: FileRetrieveArgs,
 	): Promise<StreamableFile> {
 		// lets do forced validation of the params
-		const validationErrors = await validate(new FileRetriveParams(params.id));
+		const validationErrors = await validate(new FileRetrieveParams(params.id));
 		if (validationErrors.length > 0) {
 			throw new BadRequestException(validationErrors, "Bad parameters");
 		}
 
-		const metadata = await this.service.retrieveFile(params.id);
+		const metadata = await this.service.retrieveFile(params.id, Boolean(args.thumb == "true"));
 
 		res.set({
 			"Content-Type": metadata.contentType,
@@ -62,8 +65,6 @@ export class FilesController {
 		return new StreamableFile(file);
 	}
 
-	@ApiBearerAuth()
-	@UseGuards(JwtAuthGuard)
 	@UseInterceptors(FileInterceptor("file"))
 	@ApiConsumes("multipart/form-data")
 	@ApiOkResponse({ type: FileUploadResponseDto })

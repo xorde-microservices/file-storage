@@ -3,7 +3,8 @@ import {
 	Controller,
 	Get,
 	Param,
-	Post, Query,
+	Post,
+	Query,
 	Request,
 	Res,
 	StreamableFile,
@@ -35,7 +36,10 @@ import { validate } from "class-validator";
 export class FilesController {
 	constructor(private readonly service: FilesService) {}
 
-	@ApiOperation({ description: "test" })
+	@ApiOperation({
+		description: "Retrieves uploaded file",
+		summary: "Retrieve file",
+	})
 	@ApiParam({
 		name: "id",
 		required: true,
@@ -54,7 +58,10 @@ export class FilesController {
 			throw new BadRequestException(validationErrors, "Bad parameters");
 		}
 
-		const metadata = await this.service.retrieveFile(params.id, Number(args.thumb || 0));
+		const metadata = await this.service.retrieveFile(
+			params.id,
+			Number(args.thumb || 0),
+		);
 
 		res.set({
 			"Content-Type": metadata.contentType,
@@ -65,6 +72,10 @@ export class FilesController {
 		return new StreamableFile(file);
 	}
 
+	@ApiOperation({
+		description: "Uploads a file and returns file UID",
+		summary: "Upload file",
+	})
 	@UseInterceptors(FileInterceptor("file"))
 	@ApiConsumes("multipart/form-data")
 	@ApiOkResponse({ type: FileUploadResponseDto })

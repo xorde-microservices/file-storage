@@ -1,11 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
 import { BaseService } from "../../common/base.service";
 import { j, v } from "../../common/log.utils";
 import * as fs from "fs";
 import { FileUploadResponseDto } from "./dto/upload.dto";
 import { IFileRetrieval } from "./interfaces/file.retrieval";
 import { filesConfig } from "./files.config";
-import Jimp from 'jimp/es';
+import Jimp from "jimp/es";
+
+export const MAX_THUMB_SIZE = 256;
+export const MIN_THUMB_SIZE = 16;
 
 @Injectable()
 export class FilesService extends BaseService {
@@ -15,20 +22,23 @@ export class FilesService extends BaseService {
 	): Promise<FileUploadResponseDto> {
 		this.logger.log("Upload " + v(file));
 		const timestamp = new Date().getTime();
-		const jsonFile = await fs.promises.writeFile(
+		await fs.promises.writeFile(
 			file.path + ".json",
 			j({ ...file, userId, timestamp }),
 		);
 		return new FileUploadResponseDto(file.filename, file.size);
 	}
 
-	async retrieveFile(fileId: string, thumbSize: number): Promise<IFileRetrieval> {
+	async retrieveFile(
+		fileId: string,
+		thumbSize: number,
+	): Promise<IFileRetrieval> {
 		let filepath = filesConfig().files.uploadDir + "/" + fileId;
 		const jsonFilename = filepath + ".json";
 
 		if (!fs.existsSync(jsonFilename)) {
 			this.logger.error("Not found " + fileId);
-			throw new NotFoundException("")
+			throw new NotFoundException("");
 		}
 
 		this.logger.log("Retrieve " + v({ fileId, thumbSize }));
@@ -41,9 +51,13 @@ export class FilesService extends BaseService {
 
 		if (thumbSize > 0) {
 			this.logger.debug("Getting thumb for a file " + filename);
-			if (['image/png', 'image/jpeg', 'image/gif'].includes(contentType)) {
-				this.logger.error(`Thumb requested for ${filename} which is not an image`);
-				throw new BadRequestException(`Can not generate thumb because file is not an image (${contentType})`);
+			if (!["image/png", "image/jpeg", "image/gif"].includes(contentType)) {
+				this.logger.error(
+					`Thumb requested for ${filepath} (${filename}) which is not an image (${contentType})`,
+				);
+				throw new BadRequestException(
+					`Can not generate thumb because file is not an image (${contentType})`,
+				);
 			}
 			filepath = await this.getThumb(filepath, thumbSize);
 			filename = `thumb_${thumbSize}_${filename}`;
@@ -58,12 +72,23 @@ export class FilesService extends BaseService {
 		const image = await Jimp.read(filename);
 		const thumbName = `${filename}_${size}.thumb`;
 
+		if (size < MIN_THUMB_SIZE || size > MAX_THUMB_SIZE) {
+			this.logger.error(`Thumb size ${size} is out of bounds (${filename})`);
+			throw new BadRequestException(
+				`Can not generate thumb because size if out of bounds (${size})`,
+			);
+		}
+
 		if (fs.existsSync(thumbName)) {
 			this.logger.debug(`Found existing thumb ${thumbName}`);
 			return thumbName;
 		} else {
 			this.logger.debug(`Generating new thumb ${thumbName}`);
-			await image.contain(size, size).writeAsync(thumbName);
+			try {
+				await image.contain(size, size).writeAsync(thumbName);
+			} catch (e) {
+				fs.rmSync(thumbName);
+			}
 			return thumbName;
 		}
 	}

@@ -13,7 +13,7 @@ export class FileRetrieveParams {
 }
 
 export class FileRetrieveArgs {
-	@ApiProperty({ required: false, description: "Retrive thumb of " })
+	@ApiProperty({ required: false, description: "Retrieve thumb of an image sized to [thumb]x[thumb] box" })
 	@IsOptional()
 	@IsNumberString()
 	thumb: number;

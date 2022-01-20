@@ -41,8 +41,9 @@ export class FilesService extends BaseService {
 
 		if (thumbSize > 0) {
 			this.logger.debug("Getting thumb for a file " + filename);
-			if (contentType != 'image/png') {
-				throw new BadRequestException("Can not generate thumb because file is not an image");
+			if (['image/png', 'image/jpeg', 'image/gif'].includes(contentType)) {
+				this.logger.error(`Thumb requested for ${filename} which is not an image`);
+				throw new BadRequestException(`Can not generate thumb because file is not an image (${contentType})`);
 			}
 			filepath = await this.getThumb(filepath, thumbSize);
 			filename = `thumb_${thumbSize}_${filename}`;

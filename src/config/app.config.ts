@@ -6,6 +6,7 @@ export interface IAppConfigOptions {
 	port: number;
 	jwtSecret: string;
 	prefix: string;
+	cors: string;
 }
 
 interface IAppConfig {
@@ -19,5 +20,6 @@ export const appConfig = (): IAppConfig => ({
 		port: Number(process.env.APP_PORT) || defaults.APP_PORT,
 		jwtSecret: process.env.APP_JWT_SECRET,
 		prefix: process.env.APP_PREFIX || defaults.APP_PREFIX,
+		cors: process.env.APP_CORS,
 	},
 });

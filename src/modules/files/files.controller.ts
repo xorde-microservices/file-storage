@@ -1,7 +1,8 @@
 import {
 	BadRequestException,
 	Controller,
-	Get, InternalServerErrorException,
+	Get,
+	InternalServerErrorException,
 	Param,
 	Post,
 	Query,
@@ -72,7 +73,7 @@ export class FilesController {
 			const file = createReadStream(metadata.filepath);
 			return new StreamableFile(file);
 		} catch (e) {
-			throw new InternalServerErrorException(`Failed to read filestream`)
+			throw new InternalServerErrorException(`Failed to read filestream`);
 		}
 	}
 

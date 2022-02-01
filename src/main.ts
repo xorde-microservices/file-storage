@@ -13,11 +13,12 @@ dotenv.config();
 import { NestFactory } from "@nestjs/core";
 import { Logger } from "@nestjs/common";
 import { AppModule } from "./app/app.module";
-import { kafkaConfig } from "./config/kafka.config";
 import { appConfig } from "./config/app.config";
 import { toLocalhost } from "./common/log.utils";
 import { SwaggerModule } from "@nestjs/swagger";
 import { swaggerConfig } from "./config/swagger.config";
+import * as CookieParser from "cookie-parser";
+import * as helmet from 'helmet';
 
 const logger = new Logger("Bootstrap");
 
@@ -29,7 +30,14 @@ async function bootstrap() {
 				: ["log", "debug", "verbose", "warn", "error"],
 	});
 
+	app.use(CookieParser());
+	app.use(helmet.default())
 	app.setGlobalPrefix(appConfig().app.prefix);
+
+	app.enableCors({
+		origin: true,
+		credentials: true,
+	});
 
 	const document = SwaggerModule.createDocument(
 		app,
@@ -50,3 +58,8 @@ async function bootstrap() {
 }
 
 bootstrap().then(() => logger.log("Initialized"));
+
+/*
+* CORS:
+*
+*  */

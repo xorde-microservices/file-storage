@@ -1,6 +1,7 @@
 import {
 	BadRequestException,
-	Injectable, InternalServerErrorException,
+	Injectable,
+	InternalServerErrorException,
 	NotFoundException,
 } from "@nestjs/common";
 import { BaseService } from "../../common/base.service";
@@ -85,7 +86,7 @@ export class FilesService extends BaseService {
 				return thumbName;
 			} else {
 				this.logger.debug(`Generating new thumb ${thumbName}`);
-				const thumb = image.contain(size, size)
+				const thumb = image.contain(size, size);
 				await thumb.writeAsync(thumbName);
 				return thumbName;
 			}

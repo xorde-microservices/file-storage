@@ -2,6 +2,10 @@ name: Create and publish a Docker image
 
 on:
   workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push image to registry? (true/false)'
+        default: false
   push:
     branches: ['release']
 
@@ -11,6 +15,7 @@ env:
 
 jobs:
   build-and-push-image:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
 
     strategy:
@@ -48,11 +53,17 @@ jobs:
           property: version
           fallback: 0.0.0
 
+      ### Setup BuildX so we can build for multiple platforms
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          platforms: ${{ matrix.platforms }}
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
-          push: true
+          push: ${{ github.event.inputs.push || true }}
           platforms: ${{ matrix.platforms }}
-          tags: ${{ [...steps.meta.outputs.tags, steps.read_version.outputs.value] }}
+          tags: ${{ join(steps.meta.outputs.tags) }},${{ steps.read_version.outputs.value }},latest
           labels: ${{ steps.meta.outputs.labels }}

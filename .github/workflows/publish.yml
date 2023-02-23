@@ -2,6 +2,10 @@ name: Create and publish a Docker image
 
 on:
   workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push image to registry? (true/false)'
+        default: false
   push:
     branches: ['release']
 
@@ -51,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          push: true
+          push: ${{ github.event.inputs.push || true }}
           platforms: ${{ matrix.platforms }}
           tags: ${{ join(steps.meta.outputs.tags) }},${{ steps.read_version.outputs.value }},latest
           labels: ${{ steps.meta.outputs.labels }}

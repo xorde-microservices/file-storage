@@ -1,6 +1,7 @@
 name: Create and publish a Docker image
 
 on:
+  workflow_dispatch:
   push:
     branches: ['release']
 
@@ -11,6 +12,14 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - platforms: linux/arm64
+          - platforms: linux/amd64
+          - platforms: linux/arm/v7
+
     permissions:
       contents: read
       packages: write
@@ -32,10 +41,18 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
+      - name: Read version from package.json with fallback
+        uses: amochkin/action-json@v1
+        id: read_version
+        with:
+          property: version
+          fallback: 0.0.0
+
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          platforms: ${{ matrix.platforms }}
+          tags: ${{ [...steps.meta.outputs.tags, steps.read_version.outputs.value] }}
           labels: ${{ steps.meta.outputs.labels }}

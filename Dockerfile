@@ -4,11 +4,11 @@ WORKDIR /opt/app
 
 COPY . .
 
-### disable npm update notifications
-RUN npm config set update-notifier false
-
 ### required to build such modules as bcrypt on exotic platforms such as arm64
 RUN apk add python3-dev make gcc g++
+
+### disable npm update notifications
+RUN npm config set update-notifier false
 
 RUN npm install && npm run build
 

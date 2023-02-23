@@ -7,11 +7,11 @@
  * Written by Xander Tovski, 2019-2020
  **/
 
-import { DocumentBuilder, OpenAPIObject } from "@nestjs/swagger";
-import { appConfig } from "./app.config";
-import { defaults } from "./config.defaults";
+import { DocumentBuilder, OpenAPIObject } from '@nestjs/swagger';
+import { appConfig } from './app.config';
+import { defaults } from './config.defaults';
 
-export type TSwaggerConfigOptions = Omit<OpenAPIObject, "paths">;
+export type TSwaggerConfigOptions = Omit<OpenAPIObject, 'paths'>;
 
 export interface ISwaggerConfigOptions {
 	options: TSwaggerConfigOptions;
@@ -25,13 +25,11 @@ interface ISwaggerConfig {
 export const swaggerConfig = (): ISwaggerConfig => ({
 	swagger: {
 		options: new DocumentBuilder()
-			.setTitle(appConfig().app.name + " API")
-			.setDescription(defaults.APP_NAME + " API Specification")
-			.setVersion("1.0")
+			.setTitle(appConfig().app.name + ' API')
+			.setDescription(defaults.APP_NAME + ' API Specification')
+			.setVersion('1.0')
 			.addBearerAuth()
 			.build(),
-		path:
-			(process.env.SWAGGER_PATH.charAt(0) !== "/" ? "/" : "") +
-			process.env.SWAGGER_PATH,
+		path: (process.env.APP_SWAGGER_PATH?.charAt(0) !== '/' ? '/' : '') + process.env.APP_SWAGGER_PATH,
 	},
 });

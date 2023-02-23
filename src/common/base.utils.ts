@@ -17,7 +17,7 @@ export function shallowEqual(object1, object2) {
 
 export function arrIdentical(a1, a2) {
 	let i = a1.length;
-	if (i != a2.length) return false;
+	if (i !== a2.length) return false;
 	while (i--) {
 		if (!shallowEqual(a1[i], a2[i])) return false;
 	}

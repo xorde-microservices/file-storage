@@ -1,19 +1,20 @@
-import { Module } from "@nestjs/common";
-import { FilesService } from "./files.service";
-import { FilesController } from "./files.controller";
-import { MulterModule } from "@nestjs/platform-express";
-import { filesConfig, filesEnvSchema } from "./files.config";
-import { ConfigModule } from "@nestjs/config";
+import { Module } from '@nestjs/common';
+import { FilesService } from './files.service';
+import { FilesController } from './files.controller';
+import { MulterModule } from '@nestjs/platform-express';
+import { config } from './config/config';
+import { ConfigModule } from '@nestjs/config';
+import { filesEnvSchema } from './config/schema';
 
 @Module({
 	imports: [
 		MulterModule.registerAsync({
-			useFactory: () => ({ dest: filesConfig().files.uploadDir }),
+			useFactory: () => ({ dest: config().files.uploadDir }),
 		}),
 		ConfigModule.forRoot({
 			validationSchema: filesEnvSchema,
 			isGlobal: true,
-			load: [filesConfig],
+			load: [config],
 		}),
 	],
 	controllers: [FilesController],

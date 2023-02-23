@@ -12,61 +12,52 @@ import {
 	UploadedFile,
 	UseGuards,
 	UseInterceptors,
-} from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/jwt.guard";
-import {
-	ApiBearerAuth,
-	ApiBody,
-	ApiConsumes,
-	ApiOkResponse,
-	ApiOperation,
-	ApiParam,
-	ApiTags,
-} from "@nestjs/swagger";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { FileUploadDto, FileUploadResponseDto } from "./dto/upload.dto";
-import { FilesService } from "./files.service";
-import { FileRetrieveArgs, FileRetrieveParams } from "./dto/retrieve.dto";
-import { createReadStream } from "fs";
-import { validate } from "class-validator";
+} from '@nestjs/common';
+import { JwtGuard } from '../auth/jwt.guard';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadDto, FileUploadResponseDto } from './dto/upload.dto';
+import { FilesService } from './files.service';
+import { FileRetrieveArgs, FileRetrieveParams } from './dto/retrieve.dto';
+import { createReadStream } from 'fs';
+import { validate } from 'class-validator';
+import { authConfig } from '../auth/config/config';
+import { DummyGuard } from '../auth/dummy.guard';
 
-@Controller("files")
-@ApiTags("files")
+@Controller('files')
+@ApiTags('files')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(authConfig().auth.enable ? JwtGuard : DummyGuard)
 export class FilesController {
 	constructor(private readonly service: FilesService) {}
 
 	@ApiOperation({
-		description: "Retrieves uploaded file",
-		summary: "Retrieve file",
+		description: 'Retrieves uploaded file',
+		summary: 'Retrieve file',
 	})
 	@ApiParam({
-		name: "id",
+		name: 'id',
 		required: true,
-		description: "Valid ID of previously uploaded file",
+		description: 'Valid ID of previously uploaded file',
 		allowEmptyValue: false,
 	})
-	@Get(":id")
+	@Get(':id')
 	async getFile(
 		@Res({ passthrough: true }) res,
 		@Param() params: FileRetrieveParams,
 		@Query() args: FileRetrieveArgs,
 	): Promise<StreamableFile> {
-		// lets do forced validation of the params
+		// let's do forced validation of the params
 		const validationErrors = await validate(new FileRetrieveParams(params.id));
 		if (validationErrors.length > 0) {
-			throw new BadRequestException(validationErrors, "Bad parameters");
+			throw new BadRequestException(validationErrors, 'Bad parameters');
 		}
 
-		const metadata = await this.service.retrieveFile(
-			params.id,
-			Number(args.thumb || 0),
-		);
+		const metadata = await this.service.retrieveFile(params.id, Number(args.thumb || 0));
 
 		res.set({
-			"Content-Type": metadata.contentType,
-			"Content-Disposition": `attachment; filename="${metadata.filename}"`,
+			'Content-Type': metadata.contentType,
+			'Content-Disposition': `attachment; filename="${metadata.filename}"`,
 		});
 
 		try {
@@ -78,21 +69,18 @@ export class FilesController {
 	}
 
 	@ApiOperation({
-		description: "Uploads a file and returns file UID",
-		summary: "Upload file",
+		description: 'Uploads a file and returns file UID',
+		summary: 'Upload file',
 	})
-	@UseInterceptors(FileInterceptor("file"))
-	@ApiConsumes("multipart/form-data")
+	@UseInterceptors(FileInterceptor('file', { limits: { fieldSize: 9999999 } }))
+	@ApiConsumes('multipart/form-data')
 	@ApiOkResponse({ type: FileUploadResponseDto })
 	@ApiBody({
-		description: "File DTO",
+		description: 'File DTO',
 		type: FileUploadDto,
 	})
-	@Post("")
-	async uploadFile(
-		@Request() req,
-		@UploadedFile() file: Express.Multer.File,
-	): Promise<FileUploadResponseDto> {
+	@Post('')
+	async uploadFile(@Request() req, @UploadedFile() file: Express.Multer.File): Promise<FileUploadResponseDto> {
 		return this.service.uploadFile(file, req.user?.userId);
 	}
 }

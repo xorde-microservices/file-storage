@@ -1,3 +1,5 @@
+[![CI Build](https://github.com/xorde-microservices/file-storage/actions/workflows/push_main.yml/badge.svg)](https://github.com/xorde-microservices/file-storage/actions/workflows/push_main.yml)
+
 # File Storage Microservice
 
 A high-performance file storage microservice with simple API.

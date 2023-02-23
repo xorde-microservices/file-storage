@@ -5,9 +5,7 @@ WORKDIR /opt/app
 COPY . .
 
 ### show npm & node versions and disable npm update notifications
-RUN echo "NPM version: $(npm -version)" && \
-    echo "NODE version: $(node --version)" && \
-    npm config set update-notifier false
+RUN npm config set update-notifier false
 
 ### required to build such modules as bcrypt on exotic platforms such as arm64
 RUN apk add python3-dev make gcc g++

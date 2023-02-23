@@ -4,7 +4,7 @@ WORKDIR /opt/app
 
 COPY . .
 
-### show npm & node versions and disable npm update notifications
+### disable npm update notifications
 RUN npm config set update-notifier false
 
 ### required to build such modules as bcrypt on exotic platforms such as arm64

@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - platforms: linux/arm64
+#          - platforms: linux/arm64
           - platforms: linux/amd64
 
     permissions:

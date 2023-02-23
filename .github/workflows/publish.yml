@@ -15,6 +15,7 @@ env:
 
 jobs:
   build-and-push-image:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
 
     strategy:

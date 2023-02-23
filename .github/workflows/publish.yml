@@ -54,5 +54,5 @@ jobs:
           context: .
           push: true
           platforms: ${{ matrix.platforms }}
-          tags: ${{ [...steps.meta.outputs.tags, steps.read_version.outputs.value] }}
+          tags: ${{ steps.meta.outputs.tags + steps.read_version.outputs.value }}
           labels: ${{ steps.meta.outputs.labels }}

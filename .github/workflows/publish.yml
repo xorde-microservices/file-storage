@@ -24,6 +24,9 @@ jobs:
           - linux/arm64
           - linux/amd64
           - linux/arm/v7
+          - linux/arm/v6
+          - linux/ppc64le
+          - linux/s390x
 
     permissions:
       contents: read
@@ -65,5 +68,5 @@ jobs:
           context: .
           push: ${{ github.event.inputs.push || true }}
           platforms: ${{ matrix.platforms }}
-          tags: ${{ join(steps.meta.outputs.tags) }},${{ steps.read_version.outputs.value }},latest
+          tags: ${{ join(steps.meta.outputs.labels) }},ghcr.io/${{ github.repository }}:${{ github.sha }},ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.value }},ghcr.io/${{ github.repository }}:latest
           labels: ${{ steps.meta.outputs.labels }}

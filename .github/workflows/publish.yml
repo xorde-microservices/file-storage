@@ -68,5 +68,5 @@ jobs:
           context: .
           push: ${{ github.event.inputs.push || true }}
           platforms: ${{ matrix.platforms }}
-          tags: ${{ join(steps.meta.outputs.labels) }},ghcr.io/${{ github.repository }}:${{ github.sha }},ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.value }},ghcr.io/${{ github.repository }}:latest
+          tags: ${{ join(steps.meta.outputs.tags) }},ghcr.io/${{ github.repository }}:${{ github.sha }},ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.value }},ghcr.io/${{ github.repository }}:latest
           labels: ${{ steps.meta.outputs.labels }}

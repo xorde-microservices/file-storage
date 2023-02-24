@@ -55,6 +55,8 @@ jobs:
         with:
           property: version
           fallback: 0.0.0
+          override_with: 0.0.0
+          use_override: ${{ github.ref_name != 'release' }}
 
       ### Setup BuildX so we can build for multiple platforms
       - name: Set up Docker Buildx

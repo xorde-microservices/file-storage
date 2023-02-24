@@ -1,5 +1,4 @@
 name: Publish
-description: Publish Docker image to GitHub Container Registry
 
 on:
   workflow_dispatch:

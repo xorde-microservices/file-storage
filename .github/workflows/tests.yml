@@ -1,4 +1,5 @@
 name: Tests
+description: Run tests on push and pull request
 
 on:
   push:

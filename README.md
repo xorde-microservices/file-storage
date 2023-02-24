@@ -1,4 +1,4 @@
-[![CI Build](https://github.com/xorde-microservices/file-storage/actions/workflows/push_main.yml/badge.svg)](https://github.com/xorde-microservices/file-storage/actions/workflows/push_main.yml)
+[![Tests](https://github.com/xorde-microservices/file-storage/actions/workflows/tests.yml/badge.svg)](https://github.com/xorde-microservices/file-storage/actions/workflows/tests.yml)
 
 # File Storage Microservice
 

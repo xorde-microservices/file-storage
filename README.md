@@ -1,4 +1,5 @@
 [![Tests](https://github.com/xorde-microservices/file-storage/actions/workflows/tests.yml/badge.svg)](https://github.com/xorde-microservices/file-storage/actions/workflows/tests.yml)
+[![Publish](https://github.com/xorde-microservices/file-storage/actions/workflows/publish.yml/badge.svg?branch=release)](https://github.com/xorde-microservices/file-storage/actions/workflows/publish.yml)
 
 # File Storage Microservice
 

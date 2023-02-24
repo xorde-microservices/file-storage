@@ -7,53 +7,75 @@ import { IFileRetrieval } from './interfaces/file.retrieval';
 import { config } from './config/config';
 import Jimp from 'jimp';
 import { keyValue } from 'ferramenta';
+import * as path from 'path';
+import { MetadataInterface } from './interfaces/metadata.interface';
 
 export const MAX_THUMB_SIZE = 256;
 export const MIN_THUMB_SIZE = 16;
 
 @Injectable()
 export class FilesService extends BaseService {
+	/**
+	 * Uploads file to the server
+	 * @param file
+	 * @param userId
+	 */
 	async uploadFile(file: Express.Multer.File, userId: string): Promise<FileUploadResponseDto> {
+		const timestamp = new Date().getTime();
+		const metadata: MetadataInterface = { ...file, userid: userId, timestamp };
+
 		if (!file) {
-			this.logger.debug('Empty file: ' + keyValue({ userId }));
+			this.logger.error('uploadFile error=EmptyFile ' + keyValue(metadata));
 			throw new BadRequestException('Empty "file" field in multipart-form request');
 		}
-		this.logger.log('Upload ' + keyValue(file));
-		const timestamp = new Date().getTime();
-		await fs.promises.writeFile(file.path + '.json', j({ ...file, userId, timestamp }));
+
+		fs.writeFileSync(file.path + '.json', j(metadata));
+		this.logger.log('uploadFile ' + keyValue(metadata));
 		return new FileUploadResponseDto(file.filename, file.size);
 	}
 
+	/**
+	 * Retrieves file from the server
+	 * @param fileId
+	 * @param thumbSize
+	 */
 	async retrieveFile(fileId: string, thumbSize: number): Promise<IFileRetrieval> {
-		let filepath = config().files.uploadDir + '/' + fileId;
+		let filepath = path.join(config().files.uploadDir, fileId);
 		const jsonFilename = filepath + '.json';
 
 		if (!fs.existsSync(jsonFilename)) {
-			this.logger.error('Not found ' + fileId);
+			this.logger.error('retrieveFile error=NotFound ' + keyValue({ fileId, jsonFilename, thumbSize }));
 			throw new NotFoundException('');
 		}
 
 		this.logger.log('Retrieve ' + keyValue({ fileId, thumbSize }));
 
-		const jsonMetadata = JSON.parse((await fs.promises.readFile(jsonFilename)).toString());
-		const contentType = jsonMetadata['mimetype'];
-		let filename = jsonMetadata['originalname'];
+		const metadata: MetadataInterface = JSON.parse(fs.readFileSync(jsonFilename).toString());
+		const type = metadata.mimetype;
+		const size = metadata.size;
+		let filename = metadata.originalname;
 
 		if (thumbSize > 0) {
+			const imageTypes = ['image/png', 'image/jpeg'];
 			this.logger.debug('Getting thumb for a file ' + filename);
-			if (!['image/png', 'image/jpeg'].includes(contentType)) {
-				this.logger.error(`Thumb requested for ${filepath} (${filename}) which is not an image (${contentType})`);
-				throw new BadRequestException(`Can not generate thumb because file is not an image (${contentType})`);
+			if (!imageTypes.includes(type)) {
+				this.logger.error(`Thumb requested for ${filepath} (${filename}) which is not an image (${type})`);
+				throw new BadRequestException(
+					`Can not generate thumb because file (type=${type}) is not an image (${imageTypes})`,
+				);
 			}
 			filepath = await this.getThumb(filepath, thumbSize);
 			filename = `thumb_${thumbSize}_${filename}`;
 		}
 
-		const size = jsonMetadata['size'];
-		return { filepath, filename, contentType, size };
+		return { filepath, filename, contentType: type, size };
 	}
 
-	/* quick and dirty implementation of generating thumbnails */
+	/**
+	 * Generates thumbnail for the image
+	 * @param filename
+	 * @param size
+	 */
 	async getThumb(filename: string, size: number) {
 		if (size < MIN_THUMB_SIZE || size > MAX_THUMB_SIZE) {
 			this.logger.error(`Thumb size ${size} is out of bounds (${filename})`);

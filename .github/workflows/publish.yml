@@ -12,12 +12,16 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+#  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
 
 jobs:
   build-push:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform: [ linux/amd64, linux/arm64 ]
 
     permissions:
       contents: read
@@ -70,7 +74,16 @@ jobs:
             [worker.oci]
               max-parallelism = 1
 
-      - name: Build and push Docker image
+      - name: Build Docker image for ${{ matrix.platform }}
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          platforms: ${{ matrix.platform }}
+          tags: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .

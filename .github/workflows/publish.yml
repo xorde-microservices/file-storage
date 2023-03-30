@@ -65,6 +65,10 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           platforms: ${{ matrix.platforms }}
+        ### Setup concurrency so we don't have multiple builds running at the same time
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4

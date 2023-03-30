@@ -7,26 +7,17 @@ on:
         description: 'Push image to registry? (true/false)'
         default: false
   push:
-    branches: ['release']
+    branches: ['release', 'main']
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
 
 jobs:
   build-and-push-image:
     timeout-minutes: 10
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        platforms:
-          - linux/arm64
-          - linux/amd64
-          - linux/arm/v7
-          - linux/arm/v6
-          - linux/ppc64le
-          - linux/s390x
 
     permissions:
       contents: read
@@ -43,20 +34,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
       - name: Read version from package.json with fallback
         uses: amochkin/action-json@v1
         id: read_version
         with:
           property: version
           fallback: 0.0.0
-          override_with: 0.0.0
+          ### If we're not on the release branch, use the fallback version (0.0.0):
           use_override: ${{ github.ref_name != 'release' }}
+          override_with: 0.0.0
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            ### Add 'sha-${sha}' tag for all branches:
+                  type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
+            ### Add '${version}' tag for all branches, tag extracted from package.json:
+                  type=raw,value=${{ steps.read_version.outputs.value }}
+            ### Add 'release' tag for release branch:
+                  type=raw,value=release,enable=${{ github.ref == format('refs/heads/{0}', 'release') }}
+            ### Add 'latest' tag for default branch:
+                  type=raw,value=latest,enable={{is_default_branch}}
 
       ### Setup BuildX so we can build for multiple platforms
       - name: Set up Docker Buildx
@@ -68,7 +70,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          push: ${{ github.event.inputs.push || true }}
-          platforms: ${{ matrix.platforms }}
-          tags: ${{ join(steps.meta.outputs.tags) }},ghcr.io/${{ github.repository }}:${{ github.sha }},ghcr.io/${{ github.repository }}:${{ steps.read_version.outputs.value }},ghcr.io/${{ github.repository }}:latest
+          push: ${{ github.event.inputs.push }}
+          platforms: ${{ env.PLATFORMS }}
+          tags: ${{ join(steps.meta.outputs.tags) }}
           labels: ${{ steps.meta.outputs.labels }}

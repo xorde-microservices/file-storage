@@ -51,6 +51,7 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           platforms: ${{ matrix.platform }}
           tags: ${{ env.TAG }}
           labels: ${{ steps.meta.outputs.labels }}

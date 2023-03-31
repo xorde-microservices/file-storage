@@ -1,0 +1,118 @@
+name: Publish (parallel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push image to registry? (true/false)'
+        default: false
+  push:
+    branches: ['release']
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+#  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+
+jobs:
+  build:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        platform: [ linux/amd64, linux/arm64, linux/arm/v7, linux/arm/v6 ]
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read version from package.json with fallback
+        uses: amochkin/action-json@v1
+        id: read_version
+        with:
+          property: version
+          fallback: 0.0.0
+          ### If we're not on the release branch, use the fallback version (0.0.0):
+          use_override: ${{ github.ref_name != 'release' }}
+          override_with: 0.0.0
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            ### Add 'sha-${sha}' tag for all branches:
+                  type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
+            ### Add '${version}' tag for all branches, tag extracted from package.json:
+                  type=raw,value=${{ steps.read_version.outputs.value }}
+            ### Add 'release' tag for release branch:
+                  type=raw,value=release,enable=${{ github.ref == format('refs/heads/{0}', 'release') }}
+            ### Add 'latest' tag for default branch:
+                  type=raw,value=latest,enable={{is_default_branch}}
+
+      ### Setup BuildX so we can build for multiple platforms
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          platforms: ${{ matrix.platforms }}
+        ### Setup concurrency so we don't have multiple builds running at the same time
+          config-inline: |
+            [worker.oci]
+              max-parallelism = 1
+
+      - name: Build Docker image for ${{ matrix.platform }}
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          platforms: ${{ matrix.platform }}
+          tags: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Save docker image
+        run:
+          docker save ${{ matrix.platform }} -o ${{ matrix.platform }}.tar
+
+      - name: Upload docker image artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.platform }}
+          path: ${{ matrix.platform }}.tar
+
+  publish:
+    steps:
+      - name: Download docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          path: images
+
+      - name: Load docker images
+        run: |
+          for image in images/*.tar; do
+            echo "Loading to docker: $image"
+            docker load -i $image
+          done
+          docker images ls
+
+      - name: Push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: ${{ github.event.inputs.push || 'false' }}
+          platforms: ${{ env.PLATFORMS }}
+          tags: ${{ join(steps.meta.outputs.tags) }}
+          labels: ${{ steps.meta.outputs.labels }}

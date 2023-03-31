@@ -61,7 +61,7 @@ jobs:
           docker save "${{ env.TAG }}" -o "${{ env.PLATFORM }}.tar"
 
       - name: Upload docker image artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ env.PLATFORM }}
           path: ${{ env.PLATFORM }}.tar

@@ -115,14 +115,12 @@ jobs:
       - name: Load docker images
         run: |
           find images -name "*.tar" -exec docker load -i {} \;
-          docker images ls
 
       - name: Create manifest
         run: |
-          for image in $(docker images -q); do
-            echo "Adding $image to manifest"
-            docker manifest create -a ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $image
-          done
+          echo "Docker images:"
+          docker images -q
+          docker manifest create -a ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(docker images -q | tr '\n' ' ')
 
       - name: Inspect manifest
         run: docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest

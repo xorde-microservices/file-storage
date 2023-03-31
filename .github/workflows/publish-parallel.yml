@@ -114,7 +114,8 @@ jobs:
 
       - name: Load docker images
         run: |
-          for image in images/*.tar; do echo "Loading to docker: $image" && docker load -i $image; done
+          for file in images/*; do mv "$file" "${file%.*}.tar"; done
+          for image in images/*.tar; do docker load -i "$image"; done 
 
       - name: Push Docker image
         uses: docker/build-push-action@v4

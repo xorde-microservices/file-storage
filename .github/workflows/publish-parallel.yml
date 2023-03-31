@@ -114,7 +114,7 @@ jobs:
 
       - name: Load docker images
         run: |
-          ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+          ls -al images
           docker load -i images/linux_amd64.tar
           docker load -i images/linux_arm64.tar
           docker load -i images/linux_arm_v7.tar

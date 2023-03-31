@@ -50,12 +50,12 @@ jobs:
           context: .
           push: false
           platforms: ${{ matrix.platform }}
-          tags: ${{ matrix.platform }}
+          tags: ${{ env.IMAGE_NAME }}:${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Save docker image
         run:
-          docker save "${{ matrix.platform }}" -o "${{ env.PLATFORM }}.tar"
+          docker save "${{ env.IMAGE_NAME }}:${{ matrix.platform }}" -o "${{ env.PLATFORM }}.tar"
 
       - name: Upload docker image artifact
         uses: actions/upload-artifact@v2

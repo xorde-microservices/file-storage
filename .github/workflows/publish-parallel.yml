@@ -115,7 +115,7 @@ jobs:
       - name: Load docker images
         run: |
           ls -alR images
-          find . -name "*.tar" -exec docker load -i {} \;
+          find images -name "*.tar" -exec docker load -i {} \;
 
       - name: Push Docker image
         uses: docker/build-push-action@v4

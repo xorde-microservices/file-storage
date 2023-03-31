@@ -120,6 +120,7 @@ jobs:
       - name: Create manifest
         run: |
           for image in $(docker images -q); do
+            echo "Adding $image to manifest"
             docker manifest create -a ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $image
           done
 

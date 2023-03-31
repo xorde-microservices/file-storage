@@ -46,7 +46,7 @@ jobs:
             [worker.oci]
               max-parallelism = 1
 
-      - name: Build Docker image for ${{ env.PLATFORM }}
+      - name: Build Docker image for ${{ matrix.platform }}
         uses: docker/build-push-action@v4
         with:
           context: .

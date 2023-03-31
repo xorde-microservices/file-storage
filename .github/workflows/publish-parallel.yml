@@ -94,6 +94,8 @@ jobs:
           path: ${{ matrix.platform }}.tar
 
   publish:
+    needs: build
+
     steps:
       - name: Download docker image artifact
         uses: actions/download-artifact@v3

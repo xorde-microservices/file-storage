@@ -115,10 +115,7 @@ jobs:
       - name: Load docker images
         run: |
           ls -alR images
-          docker load -i images/linux_amd64.tar
-          docker load -i images/linux_arm64.tar
-          docker load -i images/linux_arm_v7.tar
-          docker load -i images/linux_arm_v6.tar
+          find . -name "*.tar" -exec docker load -i {} \;
 
       - name: Push Docker image
         uses: docker/build-push-action@v4

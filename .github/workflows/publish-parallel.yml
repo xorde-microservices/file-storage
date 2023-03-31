@@ -28,8 +28,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Platform to environment variable
-        run: echo "PLATFORM=${{ matrix.platform }}" | tr "/" "_" >> $GITHUB_ENV
+      - name: Setup environment variables
+        run: |
+          echo "PLATFORM=${{ matrix.platform }}" | tr "/" "_" >> $GITHUB_ENV
+          echo "TAG=${{ env.IMAGE_NAME }}:${{ matrix.platform }}" | tr "/" "_" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -50,12 +52,12 @@ jobs:
           context: .
           push: false
           platforms: ${{ matrix.platform }}
-          tags: ${{ env.IMAGE_NAME }}:${{ matrix.platform }}
+          tags: ${{ env.TAG }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Save docker image
         run:
-          docker save "${{ env.IMAGE_NAME }}:${{ matrix.platform }}" -o "${{ env.PLATFORM }}.tar"
+          docker save "${{ env.TAG }}" -o "${{ env.PLATFORM }}.tar"
 
       - name: Upload docker image artifact
         uses: actions/upload-artifact@v2

@@ -115,7 +115,10 @@ jobs:
       - name: Load docker images
         run: |
           ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
-          for image in images/*.tar; do docker load -i "$image"; done 
+          docker load -i images/linux_amd64.tar
+          docker load -i images/linux_arm64.tar
+          docker load -i images/linux_arm_v7.tar
+          docker load -i images/linux_arm_v6.tar
 
       - name: Push Docker image
         uses: docker/build-push-action@v4

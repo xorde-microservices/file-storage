@@ -141,8 +141,8 @@ jobs:
 
       - name: Create manifest
         run: |
-          echo "Docker images:"
-          docker images -q
+          echo "Docker images:" && docker image ls -a
+          echo "Creating manifest for ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
           docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
             xorde-microservices_file-storage:linux_arm_v7 \
             xorde-microservices_file-storage:linux_arm_v6 \

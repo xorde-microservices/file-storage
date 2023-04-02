@@ -143,7 +143,11 @@ jobs:
         run: |
           echo "Docker images:"
           docker images -q
-          docker manifest create -a ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(docker images -q | tr '\n' ' ')
+          docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            xorde-microservices_file-storage:linux_arm_v7 \
+            xorde-microservices_file-storage:linux_arm_v6 \
+            xorde-microservices_file-storage:linux_amd64 \
+            xorde-microservices_file-storage:linux_arm64
 
       - name: Inspect manifest
         run: docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest

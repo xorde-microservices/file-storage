@@ -80,7 +80,7 @@ jobs:
 
     strategy:
       matrix:
-        platform: jobs.prepare.outputs.platforms
+        platform: ${{ needs.prepare.outputs.platforms }}
 
     permissions:
       contents: read
@@ -110,7 +110,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   publish:
-    needs: build
+    needs: [build, prepare]
     runs-on: ubuntu-latest
 
     env:
@@ -134,7 +134,7 @@ jobs:
             ### Add 'sha-${sha}' tag for all branches:
                   type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
             ### Add '${version}' tag for all branches:
-                  type=raw,value=${{ jobs.prepare.outputs.version }}
+                  type=raw,value=${{ needs.prepare.outputs.version }}
             ### Add 'release' tag for release branch:
                   type=raw,value=release,enable=${{ github.ref == format('refs/heads/{0}', 'release') }}
             ### Add 'latest' tag for default branch:

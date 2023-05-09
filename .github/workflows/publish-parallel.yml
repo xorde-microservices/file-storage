@@ -80,7 +80,7 @@ jobs:
 
     strategy:
       matrix:
-        platform: ${{ fromJson(jobs.prepare.outputs.platforms) }}
+        platform: [${{ fromJson(jobs.prepare.outputs.platforms) }}]
 
     permissions:
       contents: read

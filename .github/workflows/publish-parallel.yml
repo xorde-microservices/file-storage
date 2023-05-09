@@ -11,13 +11,22 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-#  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
+    outputs:
+      platforms: ${{ steps.platforms.outputs.result }}
+      images: ${{ steps.images.outputs.result }}
+      version: ${{ steps.version.outputs.value }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Delete Old Artifacts
         uses: actions/github-script@v6
         id: artifact
@@ -37,6 +46,33 @@ jobs:
               })
             })
 
+      - name: Output PLATFORMS as JSON
+        uses: actions/github-script@v6
+        id: platforms
+        with:
+          script: |
+            return process.env.PLATFORMS?.split(",") || [];
+
+      - name: Output IMAGES based on PLATFORMS (with slashes replaced with underscores)
+        uses: actions/github-script@v6
+        id: images
+        with:
+          script: |
+            const platforms = process.env.PLATFORMS?.split(",") || [];
+            return platforms.map(platform => {
+              return process.env.IMAGE + ':' + platform.replace("/", "_");
+            });        
+
+      - name: Read version from package.json with fallback
+        uses: amochkin/action-json@v1
+        id: version
+        with:
+          property: version
+          fallback: 0.0.0
+          ### If we're not on the release branch, use the fallback version (0.0.0):
+          use_override: ${{ github.ref_name != 'release' }}
+          override_with: 0.0.0
+
   build:
     needs: prepare
     timeout-minutes: 30
@@ -44,7 +80,7 @@ jobs:
 
     strategy:
       matrix:
-        platform: [ linux/amd64, linux/arm64, linux/arm/v7, linux/arm/v6 ]
+        platform: ${{ fromJson(jobs.prepare.outputs.platforms) }}
 
     permissions:
       contents: read
@@ -53,8 +89,7 @@ jobs:
     steps:
       - name: Setup environment variables
         run: |
-          echo "PLATFORM=${{ matrix.platform }}" | tr "/" "_" >> $GITHUB_ENV
-          echo "TAG=${{ env.IMAGE_NAME }}:${{ matrix.platform }}" | tr "/" "_" >> $GITHUB_ENV
+          echo "TAG=${{ matrix.platform }}" | tr "/" "_" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -64,55 +99,30 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           platforms: ${{ matrix.platform }}
-        ### Setup concurrency so we don't have multiple builds running at the same time
-          config-inline: |
-            [worker.oci]
-              max-parallelism = 1
 
+      ### Build and push the image
       - name: Build Docker image for ${{ matrix.platform }}
         uses: docker/build-push-action@v4
         with:
           context: .
-          push: false
-          load: true
+          push: true
           platforms: ${{ matrix.platform }}
-          tags: ${{ env.TAG }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Save docker image
-        run:
-          docker save "${{ env.TAG }}" -o "${{ env.PLATFORM }}.tar"
-
-      - name: Upload docker image artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ env.PLATFORM }}
-          path: ${{ env.PLATFORM }}.tar
+          tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
 
   publish:
     needs: build
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    env:
+      IMAGES: ${{ join(fromJson(needs.build.outputs.images), ' ') }}
 
+    steps:
       - name: Log in to the Container registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Read version from package.json with fallback
-        uses: amochkin/action-json@v1
-        id: read_version
-        with:
-          property: version
-          fallback: 0.0.0
-          ### If we're not on the release branch, use the fallback version (0.0.0):
-          use_override: ${{ github.ref_name != 'release' }}
-          override_with: 0.0.0
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -123,31 +133,18 @@ jobs:
           tags: |
             ### Add 'sha-${sha}' tag for all branches:
                   type=sha,enable=true,priority=100,prefix=sha-,suffix=,format=short
-            ### Add '${version}' tag for all branches, tag extracted from package.json:
-                  type=raw,value=${{ steps.read_version.outputs.value }}
+            ### Add '${version}' tag for all branches:
+                  type=raw,value=${{ jobs.prepare.outputs.version }}
             ### Add 'release' tag for release branch:
                   type=raw,value=release,enable=${{ github.ref == format('refs/heads/{0}', 'release') }}
             ### Add 'latest' tag for default branch:
                   type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Download docker image artifact
-        uses: actions/download-artifact@v3
-        with:
-          path: images
-
-      - name: Load docker images
-        run: |
-          find images -name "*.tar" -exec docker load -i {} \;
-
       - name: Create manifest
         run: |
           echo "Docker images:" && docker image ls -a
           echo "Creating manifest for ${{ env.IMAGE_NAME }}:latest"
-          docker manifest create ${{ env.IMAGE_NAME }}:latest \
-            xorde-microservices_file-storage:linux_arm_v7 \
-            xorde-microservices_file-storage:linux_arm_v6 \
-            xorde-microservices_file-storage:linux_amd64 \
-            xorde-microservices_file-storage:linux_arm64
+          docker manifest create ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGES }}
 
       - name: Inspect manifest
-        run: docker manifest inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        run: docker manifest inspect ${{ env.IMAGE_NAME }}:latest

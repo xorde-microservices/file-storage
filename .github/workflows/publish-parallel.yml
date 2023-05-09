@@ -106,6 +106,8 @@ jobs:
         uses: docker/setup-buildx-action@v2
         with:
           platforms: ${{ matrix.platform }}
+          driver: docker
+          install: true
 
       ### Build and push the image
       - name: Build Docker image for ${{ matrix.platform }}

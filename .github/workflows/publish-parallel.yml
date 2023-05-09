@@ -23,19 +23,19 @@ jobs:
         id: artifact
         with:
           script: |
-            const res = await github.rest.actions.listArtifactsForRepo({
+            github.rest.actions.listArtifactsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-            })
-            
-            res.data.artifacts
-              .forEach(({ id }) => {
+            }).then(res => {
+              console.log("Artifacts: %o", res.data.artifacts);
+              res.data.artifacts.forEach(({ id }) => {
                 github.rest.actions.deleteArtifact({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   artifact_id: id,
                 })
               })
+            })
 
   build:
     needs: prepare
